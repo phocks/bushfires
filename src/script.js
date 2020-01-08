@@ -1,18 +1,23 @@
+// D3 module imports
 import * as d3Selection from "d3-selection";
 import * as d3Geo from "d3-geo";
 import * as d3Interpolate from "d3-interpolate";
 import * as d3Transition from "d3-transition";
+// Then combine them all
 const d3 = { ...d3Selection, ...d3Geo, ...d3Transition, ...d3Interpolate };
 
 import * as topojson from "topojson-client";
+import canvasDpiScaler from "canvas-dpi-scaler";
 
 const margin = 100;
 const screenWidth = window.innerWidth;
 const screenHeight = window.innerHeight;
 
 // let currentLocationId = "northkorea"
-let currentRangeInKms = 1000;
+let currentRangeInKms = 163.518;
 let previousRangeInKms = 0;
+
+let currentLongLat = [133.15399233370441, -24.656909465155994];
 
 const body = d3
   .select("body")
@@ -24,19 +29,27 @@ const canvas = d3
   .append("canvas")
   .style("display", "block")
   .attr("width", screenWidth)
-  .attr("height", screenHeight);
+  .attr("height", screenHeight)
+  .classed("stage", true);
 
 import worldMap from "./world-map.js";
 import storyData from "./story-data.js";
-console.log(worldMap, storyData);
+// console.log(worldMap, storyData);
 
-const land = topojson.feature(worldMap, worldMap.objects.land);
+import ausStatesMap from "./aus-states.topo.json";
+import ausMap from "./aus-larger.geo.json";
+console.log(ausMap.features[0]);
+
+const world = topojson.feature(worldMap, worldMap.objects.land);
+const land = topojson.feature(ausStatesMap, ausStatesMap.objects.states);
 const globe = { type: "Sphere" };
-console.log(land, globe);
+console.log(world);
 
 const projection = d3
-  .geoOrthographic() // Globe projection
-  .clipAngle(90) // Only display front side of the world
+  // .geoMercator() // D3 Projection
+  .geoOrthographic()
+  // .clipAngle(90) // Only display front side of the world
+  .rotate(invertLongLat(currentLongLat))
   .fitExtent(
     // Auto zoom
     [
@@ -48,14 +61,20 @@ const projection = d3
 
 const context = canvas.node().getContext("2d");
 
+// A non-d3 element selection for Retina dn High DPI scaling
+const canvasEl = document.querySelector(".stage");
+
+// Auto-convert canvas to Retina display and High DPI monitor scaling
+canvasDpiScaler(canvasEl, context);
+
 const path = d3
   .geoPath()
   .projection(projection)
   .context(context);
 
 // Set the main point
-const initialPoint = getItem("pyongyang").longlat;
-projection.rotate([-initialPoint[0], -initialPoint[1]]);
+const initialPoint = getItem("australia").longlat;
+// projection.rotate([-initialPoint[0], -initialPoint[1]]);
 
 // A helper function to index an array of objects
 function getItem(id) {
@@ -64,7 +83,7 @@ function getItem(id) {
 
 const rangeCircle = d3
   .geoCircle()
-  .center(initialPoint)
+  .center(currentLongLat)
   .radius(kmsToRadius(currentRangeInKms));
 
 // Helper to turn kilometres into a D3 radius
@@ -93,7 +112,7 @@ function drawWorld() {
   context.strokeStyle = "darkgrey";
   context.fillStyle = "white";
   context.lineWidth = 1.1;
-  path(land);
+  path(ausMap);
   context.fill();
   context.stroke();
 
@@ -114,7 +133,7 @@ function drawWorld() {
   context.strokeStyle = "#f9f9f9";
   context.lineWidth = 12;
   path(globe);
-  context.stroke();
+  // context.stroke();
 
   // Draw a little circle a bit smaller radius
   // We mess with the scale then put it back
@@ -124,7 +143,7 @@ function drawWorld() {
   context.lineWidth = 2;
   projection.scale(projection.scale() - 5);
   path(globe);
-  context.stroke();
+  // context.stroke();
   projection.scale(projection.scale() + 5);
 }
 
@@ -162,6 +181,10 @@ body.on("keydown", e => {
   let currentScale =
     initialGlobeScale * (storyData[currentStoryPosition].scale / 100);
 
+  // Set circle position
+  let circlePos = storyData[currentStoryPosition].longlat
+  rangeCircle.center(circlePos)
+
   console.log("Story position: " + currentStoryPosition);
   console.log(storyData[currentStoryPosition].name);
   console.log("Missile range: " + currentRangeInKms);
@@ -197,3 +220,7 @@ body.on("keydown", e => {
       };
     });
 });
+
+function invertLongLat(longlat) {
+  return [-longlat[0], -longlat[1]];
+}
