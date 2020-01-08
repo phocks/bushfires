@@ -13,7 +13,6 @@ const margin = 100;
 const screenWidth = window.innerWidth;
 const screenHeight = window.innerHeight;
 
-// let currentLocationId = "northkorea"
 let currentRangeInKms = 163.518;
 let previousRangeInKms = 0;
 
@@ -59,6 +58,7 @@ const projection = d3
     land
   );
 
+// Context needed to draw on canvas
 const context = canvas.node().getContext("2d");
 
 // A non-d3 element selection for Retina dn High DPI scaling

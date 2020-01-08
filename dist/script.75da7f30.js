@@ -13055,8 +13055,7 @@ var d3 = _objectSpread({}, d3Selection, {}, d3Geo, {}, d3Transition, {}, d3Inter
 
 var margin = 100;
 var screenWidth = window.innerWidth;
-var screenHeight = window.innerHeight; // let currentLocationId = "northkorea"
-
+var screenHeight = window.innerHeight;
 var currentRangeInKms = 163.518;
 var previousRangeInKms = 0;
 var currentLongLat = [133.15399233370441, -24.656909465155994];
@@ -13072,7 +13071,8 @@ console.log(world);
 var projection = d3 // .geoMercator() // D3 Projection
 .geoOrthographic() // .clipAngle(90) // Only display front side of the world
 .rotate(invertLongLat(currentLongLat)).fitExtent( // Auto zoom
-[[margin, margin], [screenWidth - margin, screenHeight - margin]], land);
+[[margin, margin], [screenWidth - margin, screenHeight - margin]], land); // Context needed to draw on canvas
+
 var context = canvas.node().getContext("2d"); // A non-d3 element selection for Retina dn High DPI scaling
 
 var canvasEl = document.querySelector(".stage"); // Auto-convert canvas to Retina display and High DPI monitor scaling
