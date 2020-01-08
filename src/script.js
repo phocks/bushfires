@@ -2,10 +2,9 @@ import * as d3Selection from "d3-selection";
 import * as d3Geo from "d3-geo";
 import * as d3Interpolate from "d3-interpolate";
 import * as d3Transition from "d3-transition";
+const d3 = { ...d3Selection, ...d3Geo, ...d3Transition, ...d3Interpolate };
 
 import * as topojson from "topojson-client";
-
-const d3 = { ...d3Selection, ...d3Geo, ...d3Transition, ...d3Interpolate };
 
 const margin = 100;
 const screenWidth = window.innerWidth;
