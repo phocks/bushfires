@@ -3,7 +3,7 @@ import * as d3Selection from "d3-selection";
 import * as d3Geo from "d3-geo";
 import * as d3Interpolate from "d3-interpolate";
 import * as d3Transition from "d3-transition";
-// Then combine them all
+// Then combine them all into a single d3 var
 const d3 = { ...d3Selection, ...d3Geo, ...d3Transition, ...d3Interpolate };
 
 import * as topojson from "topojson-client";
@@ -18,6 +18,19 @@ let previousRangeInKms = 0;
 
 let currentLongLat = [133.15399233370441, -24.656909465155994];
 
+import worldMap from "./world-map.js";
+import storyData from "./story-data.js";
+
+import ausStatesMap from "./aus-states.topo.json";
+import ausMap from "./aus-larger.geo.json";
+
+import fires from "./fires.json";
+console.log(fires);
+
+const world = topojson.feature(worldMap, worldMap.objects.land);
+const land = topojson.feature(ausStatesMap, ausStatesMap.objects.states);
+const globe = { type: "Sphere" };
+
 const body = d3
   .select("body")
   .style("background-color", "#f9f9f9")
@@ -30,19 +43,6 @@ const canvas = d3
   .attr("width", screenWidth)
   .attr("height", screenHeight)
   .classed("stage", true);
-
-import worldMap from "./world-map.js";
-import storyData from "./story-data.js";
-// console.log(worldMap, storyData);
-
-import ausStatesMap from "./aus-states.topo.json";
-import ausMap from "./aus-larger.geo.json";
-console.log(ausMap.features[0]);
-
-const world = topojson.feature(worldMap, worldMap.objects.land);
-const land = topojson.feature(ausStatesMap, ausStatesMap.objects.states);
-const globe = { type: "Sphere" };
-console.log(world);
 
 const projection = d3
   // .geoMercator() // D3 Projection
@@ -70,7 +70,8 @@ canvasDpiScaler(canvasEl, context);
 const path = d3
   .geoPath()
   .projection(projection)
-  .context(context);
+  .context(context)
+  .pointRadius(1);
 
 // Set the main point
 const initialPoint = getItem("australia").longlat;
@@ -96,7 +97,7 @@ drawWorld();
 
 function drawWorld() {
   // Clear the canvas ready for redraw
-  context.clearRect(0, 0, screenWidth, screenHeight);
+  // context.clearRect(0, 0, screenWidth, screenHeight);
 
   // Draw the oceans and the seas
   context.beginPath();
@@ -117,15 +118,15 @@ function drawWorld() {
   context.stroke();
 
   // Draw circle launch radius
-  context.beginPath();
-  context.strokeStyle = "#FF6100";
-  context.globalAlpha = 0.1;
-  context.fillStyle = "#FF4D00";
-  context.lineWidth = 2.2;
-  path(rangeCircle());
-  context.fill();
-  context.globalAlpha = 1;
-  context.stroke();
+  // context.beginPath();
+  // context.strokeStyle = "#FF6100";
+  // context.globalAlpha = 0.1;
+  // context.fillStyle = "#FF4D00";
+  // context.lineWidth = 2.2;
+  // path(rangeCircle());
+  // context.fill();
+  // context.globalAlpha = 1;
+  // context.stroke();
 
   // Draw a circle outline around the world
   // First clear any radius around the outside
@@ -145,6 +146,44 @@ function drawWorld() {
   path(globe);
   // context.stroke();
   projection.scale(projection.scale() + 5);
+}
+
+// drawPoint([133.15399233370441, -24.656909465155994]);
+
+// for (const fire of fires) {
+//   drawPoint([fire.longitude, fire.latitude]);
+// }
+
+let index = 0;
+
+function repeatOften() {
+  // Do whatever
+  drawPoint([fires[index].longitude, fires[index].latitude]);
+  index++;
+  if (index < fires.length) requestAnimationFrame(repeatOften);
+}
+requestAnimationFrame(repeatOften);
+
+function drawPoint(longlat) {
+  // Draw some points
+  context.beginPath();
+  context.strokeStyle = "#FF6100";
+  context.globalAlpha = 0.9;
+  context.fillStyle = "#FF4D00";
+  context.lineWidth = 2.2;
+  // path(rangeCircle());
+  path({
+    type: "Feature",
+    geometry: {
+      type: "Point",
+      coordinates: longlat
+    },
+    properties: {
+      name: "Fire"
+    }
+  });
+  context.fill();
+  context.globalAlpha = 1;
 }
 
 // The story starts here
@@ -182,8 +221,8 @@ body.on("keydown", e => {
     initialGlobeScale * (storyData[currentStoryPosition].scale / 100);
 
   // Set circle position
-  let circlePos = storyData[currentStoryPosition].longlat
-  rangeCircle.center(circlePos)
+  let circlePos = storyData[currentStoryPosition].longlat;
+  rangeCircle.center(circlePos);
 
   console.log("Story position: " + currentStoryPosition);
   console.log(storyData[currentStoryPosition].name);
@@ -223,4 +262,12 @@ body.on("keydown", e => {
 
 function invertLongLat(longlat) {
   return [-longlat[0], -longlat[1]];
+}
+
+function delayLoop(fn, delay) {
+  return (name, i) => {
+    setTimeout(() => {
+      display(name);
+    }, i * 1000);
+  };
 }
