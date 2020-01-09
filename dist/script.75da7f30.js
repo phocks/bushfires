@@ -175119,13 +175119,77 @@ function drawWorld() {
 // }
 
 
+var fireGroups = [];
+var fireGroup = [];
+var previousFireTime = null;
+var currentFireTime;
+var _iteratorNormalCompletion = true;
+var _didIteratorError = false;
+var _iteratorError = undefined;
+
+try {
+  for (var _iterator = _fires.default[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+    var fire = _step.value;
+    currentFireTime = fire.acq_time;
+
+    if (previousFireTime === null || currentFireTime === previousFireTime) {
+      fireGroup.push(fire);
+      previousFireTime = currentFireTime;
+    } else {
+      fireGroups.push(fireGroup);
+      fireGroup = [];
+      previousFireTime = currentFireTime;
+    }
+  }
+} catch (err) {
+  _didIteratorError = true;
+  _iteratorError = err;
+} finally {
+  try {
+    if (!_iteratorNormalCompletion && _iterator.return != null) {
+      _iterator.return();
+    }
+  } finally {
+    if (_didIteratorError) {
+      throw _iteratorError;
+    }
+  }
+}
+
+console.log(fireGroups);
 var index = 0;
+var fps = 5;
 
 function repeatOften() {
-  // Do whatever
-  drawPoint([_fires.default[index].longitude, _fires.default[index].latitude]);
-  index++;
-  if (index < _fires.default.length) requestAnimationFrame(repeatOften);
+  setTimeout(function () {
+    console.log("Frame");
+    var _iteratorNormalCompletion2 = true;
+    var _didIteratorError2 = false;
+    var _iteratorError2 = undefined;
+
+    try {
+      for (var _iterator2 = fireGroups[index][Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+        var fire = _step2.value;
+        drawPoint([fire.longitude, fire.latitude]);
+      }
+    } catch (err) {
+      _didIteratorError2 = true;
+      _iteratorError2 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
+          _iterator2.return();
+        }
+      } finally {
+        if (_didIteratorError2) {
+          throw _iteratorError2;
+        }
+      }
+    }
+
+    index++;
+    if (index < fireGroups.length) requestAnimationFrame(repeatOften);
+  }, 1000 / fps);
 }
 
 requestAnimationFrame(repeatOften);
@@ -175241,7 +175305,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57037" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63405" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

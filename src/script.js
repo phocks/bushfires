@@ -154,13 +154,38 @@ function drawWorld() {
 //   drawPoint([fire.longitude, fire.latitude]);
 // }
 
+let fireGroups = [];
+let fireGroup = [];
+let previousFireTime = null;
+let currentFireTime;
+
+for (const fire of fires) {
+  currentFireTime = fire.acq_time;
+
+  if (previousFireTime === null || currentFireTime === previousFireTime) {
+    fireGroup.push(fire);
+    previousFireTime = currentFireTime;
+  } else {
+    fireGroups.push(fireGroup);
+    fireGroup = [];
+    previousFireTime = currentFireTime;
+  }
+}
+
+console.log(fireGroups);
+
 let index = 0;
+let fps = 5;
 
 function repeatOften() {
-  // Do whatever
-  drawPoint([fires[index].longitude, fires[index].latitude]);
-  index++;
-  if (index < fires.length) requestAnimationFrame(repeatOften);
+  setTimeout(() => {
+    console.log("Frame")
+    for (const fire of fireGroups[index]) {
+      drawPoint([fire.longitude, fire.latitude])
+    }
+    index++;
+    if (index < fireGroups.length) requestAnimationFrame(repeatOften);
+  }, 1000 / fps);
 }
 requestAnimationFrame(repeatOften);
 
