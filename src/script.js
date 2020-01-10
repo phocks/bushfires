@@ -8,6 +8,7 @@ const d3 = { ...d3Selection, ...d3Geo, ...d3Transition, ...d3Interpolate };
 
 import * as topojson from "topojson-client";
 import canvasDpiScaler from "canvas-dpi-scaler";
+import * as Papa from "papaparse";
 
 const margin = 100;
 const screenWidth = window.innerWidth;
@@ -24,12 +25,13 @@ import storyData from "./story-data.js";
 import ausStatesMap from "./aus-states.topo.json";
 import ausMap from "./aus-larger.geo.json";
 
-import fires from "./fires.json";
-console.log(fires);
+// import fires from "./fires.json";
 
 const world = topojson.feature(worldMap, worldMap.objects.land);
 const land = topojson.feature(ausStatesMap, ausStatesMap.objects.states);
 const globe = { type: "Sphere" };
+
+console.log(land)
 
 const body = d3
   .select("body")
@@ -55,7 +57,7 @@ const projection = d3
       [margin, margin],
       [screenWidth - margin, screenHeight - margin]
     ],
-    land
+    land.features[0]
   );
 
 // Context needed to draw on canvas
@@ -91,6 +93,56 @@ const rangeCircle = d3
 function kmsToRadius(kms) {
   return kms / 111.319444; // This many kilometres per degree
 }
+
+Papa.parse("http://localhost:1234/7days.csv", {
+  download: true,
+  header: true,
+  step: function(row) {
+    const fire = row.data;
+    currentFireTime = fire.acq_time;
+
+    fires.push(fire);
+
+    if (previousFireTime === null || currentFireTime === previousFireTime) {
+      fireGroup.push(fire);
+      previousFireTime = currentFireTime;
+    } else {
+      fireGroups.push(fireGroup);
+      fireGroup = [];
+      previousFireTime = currentFireTime;
+    }
+  },
+  complete: function() {
+    console.log("All done!");
+
+    let index = 0;
+    let fps = 2;
+
+    function repeatOften() {
+      setTimeout(() => {
+        console.log("Frame");
+
+        // drawWorld();
+
+        if (index !== 0) {
+          for (const fire of fireGroups[index - 1]) {
+            drawPoint([fire.longitude, fire.latitude], "#111111");
+          }
+        }
+
+        for (const fire of fireGroups[index]) {
+          drawPoint([fire.longitude, fire.latitude], "#FF4D00");
+        }
+
+        // drawPoint([fires[index].longitude, fires[index].latitude]);
+
+        index++;
+        if (index < fireGroups.length) requestAnimationFrame(repeatOften);
+      }, 1000 / fps);
+    }
+    requestAnimationFrame(repeatOften);
+  }
+});
 
 // Draw the inital state of the world
 drawWorld();
@@ -148,54 +200,32 @@ function drawWorld() {
   projection.scale(projection.scale() + 5);
 }
 
-// drawPoint([133.15399233370441, -24.656909465155994]);
-
-// for (const fire of fires) {
-//   drawPoint([fire.longitude, fire.latitude]);
-// }
-
+let fires = [];
 let fireGroups = [];
 let fireGroup = [];
 let previousFireTime = null;
 let currentFireTime;
 
-for (const fire of fires) {
-  currentFireTime = fire.acq_time;
+// for (const fire of fires) {
+//   currentFireTime = fire.acq_time;
 
-  if (previousFireTime === null || currentFireTime === previousFireTime) {
-    fireGroup.push(fire);
-    previousFireTime = currentFireTime;
-  } else {
-    fireGroups.push(fireGroup);
-    fireGroup = [];
-    previousFireTime = currentFireTime;
-  }
-}
+//   if (previousFireTime === null || currentFireTime === previousFireTime) {
+//     fireGroup.push(fire);
+//     previousFireTime = currentFireTime;
+//   } else {
+//     fireGroups.push(fireGroup);
+//     fireGroup = [];
+//     previousFireTime = currentFireTime;
+//   }
+// }
 
-console.log(fireGroups);
-
-let index = 0;
-let fps = 5;
-
-function repeatOften() {
-  setTimeout(() => {
-    console.log("Frame")
-    for (const fire of fireGroups[index]) {
-      drawPoint([fire.longitude, fire.latitude])
-    }
-    index++;
-    if (index < fireGroups.length) requestAnimationFrame(repeatOften);
-  }, 1000 / fps);
-}
-requestAnimationFrame(repeatOften);
-
-function drawPoint(longlat) {
+function drawPoint(longlat, color) {
   // Draw some points
   context.beginPath();
-  context.strokeStyle = "#FF6100";
-  context.globalAlpha = 0.9;
-  context.fillStyle = "#FF4D00";
-  context.lineWidth = 2.2;
+  // context.strokeStyle = color;
+  context.globalAlpha = 0.3;
+  context.fillStyle = color;
+  // context.lineWidth = 2.2;
   // path(rangeCircle());
   path({
     type: "Feature",
@@ -208,7 +238,7 @@ function drawPoint(longlat) {
     }
   });
   context.fill();
-  context.globalAlpha = 1;
+  // context.globalAlpha = 1;
 }
 
 // The story starts here
