@@ -31,7 +31,7 @@ const world = topojson.feature(worldMap, worldMap.objects.land);
 const land = topojson.feature(ausStatesMap, ausStatesMap.objects.states);
 const globe = { type: "Sphere" };
 
-console.log(land)
+console.log(land);
 
 const body = d3
   .select("body")
@@ -57,7 +57,7 @@ const projection = d3
       [margin, margin],
       [screenWidth - margin, screenHeight - margin]
     ],
-    land.features[0]
+    land
   );
 
 // Context needed to draw on canvas
@@ -73,7 +73,7 @@ const path = d3
   .geoPath()
   .projection(projection)
   .context(context)
-  .pointRadius(1);
+  .pointRadius(0.5);
 
 // Set the main point
 const initialPoint = getItem("australia").longlat;
@@ -94,7 +94,7 @@ function kmsToRadius(kms) {
   return kms / 111.319444; // This many kilometres per degree
 }
 
-Papa.parse("http://localhost:1234/7days.csv", {
+Papa.parse("http://localhost:1234/fire_archive_V1_95963.csv", {
   download: true,
   header: true,
   step: function(row) {
@@ -113,24 +113,35 @@ Papa.parse("http://localhost:1234/7days.csv", {
     }
   },
   complete: function() {
-    console.log("All done!");
+    console.log("CSV parsed...");
 
     let index = 0;
-    let fps = 2;
+    let fps = 30;
+    let dateLastShown;
+    let highlightFrames = 60;
 
     function repeatOften() {
-      setTimeout(() => {
-        console.log("Frame");
+      // setTimeout(() => {
+        // console.log("Frame");
 
-        // drawWorld();
-
-        if (index !== 0) {
-          for (const fire of fireGroups[index - 1]) {
+        if (index > highlightFrames - 1) {
+          for (const fire of fireGroups[index - highlightFrames]) {
             drawPoint([fire.longitude, fire.latitude], "#111111");
           }
         }
 
+        // if (index > 1) {
+        //   for (const fire of fireGroups[index - 1]) {
+        //     drawPoint([fire.longitude, fire.latitude], "#ed7b1e");
+        //   }
+        // }
+
         for (const fire of fireGroups[index]) {
+          // if (Math.random() < 0.001) console.log(fire.acq_date);
+          if (!dateLastShown || fire.acq_date !== dateLastShown) {
+            console.log(fire.acq_date);
+            dateLastShown = fire.acq_date;
+          }
           drawPoint([fire.longitude, fire.latitude], "#FF4D00");
         }
 
@@ -138,7 +149,7 @@ Papa.parse("http://localhost:1234/7days.csv", {
 
         index++;
         if (index < fireGroups.length) requestAnimationFrame(repeatOften);
-      }, 1000 / fps);
+      // }, 1000 / fps);
     }
     requestAnimationFrame(repeatOften);
   }
@@ -165,7 +176,7 @@ function drawWorld() {
   context.strokeStyle = "darkgrey";
   context.fillStyle = "white";
   context.lineWidth = 1.1;
-  path(ausMap);
+  path(land);
   context.fill();
   context.stroke();
 
@@ -223,7 +234,7 @@ function drawPoint(longlat, color) {
   // Draw some points
   context.beginPath();
   // context.strokeStyle = color;
-  context.globalAlpha = 0.3;
+  context.globalAlpha = 1.0;
   context.fillStyle = color;
   // context.lineWidth = 2.2;
   // path(rangeCircle());
@@ -248,6 +259,10 @@ let storyPositionMax = storyData.length;
 // Set initial global scale to handle zoom ins and outs
 const initialGlobeScale = projection.scale();
 
+// Set initial position
+currentStoryPosition = 1;
+doZoom();
+
 body.on("keydown", e => {
   // Advance the story on keydown event
   console.log("Keycode: " + d3Selection.event.keyCode);
@@ -262,6 +277,10 @@ body.on("keydown", e => {
     if (currentStoryPosition >= storyPositionMax) currentStoryPosition = 0;
   }
 
+  doZoom();
+});
+
+function doZoom() {
   // Set ranges
   previousRangeInKms = currentRangeInKms;
   currentRangeInKms = storyData[currentStoryPosition].range;
@@ -281,7 +300,7 @@ body.on("keydown", e => {
 
   console.log("Story position: " + currentStoryPosition);
   console.log(storyData[currentStoryPosition].name);
-  console.log("Missile range: " + currentRangeInKms);
+  // console.log("Missile range: " + currentRangeInKms);
   console.log("Earth's rotation: " + currentRotation);
   console.log("Zoom: " + currentScale);
 
@@ -290,7 +309,7 @@ body.on("keydown", e => {
   d3.select(dummyTransition)
     .transition("transition")
     .delay(0)
-    .duration(1000)
+    .duration(0)
     .tween("spinner", function() {
       let rotationInterpolate = d3.interpolate(previousRotation, [
         -currentRotation[0],
@@ -313,16 +332,8 @@ body.on("keydown", e => {
         drawWorld();
       };
     });
-});
+}
 
 function invertLongLat(longlat) {
   return [-longlat[0], -longlat[1]];
-}
-
-function delayLoop(fn, delay) {
-  return (name, i) => {
-    setTimeout(() => {
-      display(name);
-    }, i * 1000);
-  };
 }

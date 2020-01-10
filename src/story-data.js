@@ -7,6 +7,21 @@ export default [
     scale: 90
   },
   {
+    id: "nt",
+    name: "Northern Territory",
+    longlat: [133.082975, -13.751796],
+    range: 163.518,
+    scale: 600
+  },
+
+  {
+    id: "sea",
+    name: "South East Australia",
+    longlat: [147.779085, -36.051146],
+    range: 163.518,
+    scale: 800
+  },
+  {
     id: "brisbane",
     name: "Brisbane",
     longlat: [153.021072, -27.470125],
