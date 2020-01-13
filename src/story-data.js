@@ -7,6 +7,13 @@ export default [
     scale: 90
   },
   {
+    id: "nsw",
+    name: "New South Wales",
+    longlat: [146.412204, -33.036693],
+    range: 163.518,
+    scale: 300
+  },
+  {
     id: "nt",
     name: "Northern Territory",
     longlat: [133.082975, -13.751796],

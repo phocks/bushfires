@@ -24,6 +24,7 @@ import storyData from "./story-data.js";
 
 import ausStatesMap from "./aus-states.topo.json";
 import ausMap from "./aus-larger.geo.json";
+import ausStraight from "./aust-straight.geo.json"
 
 // import fires from "./fires.json";
 
@@ -31,7 +32,7 @@ const world = topojson.feature(worldMap, worldMap.objects.land);
 const land = topojson.feature(ausStatesMap, ausStatesMap.objects.states);
 const globe = { type: "Sphere" };
 
-console.log(land);
+console.log(ausStraight);
 
 const body = d3
   .select("body")
@@ -47,17 +48,18 @@ const canvas = d3
   .classed("stage", true);
 
 const projection = d3
-  // .geoMercator() // D3 Projection
-  .geoOrthographic()
+  .geoMercator() // D3 Projection
+  // .geoOrthographic()
+  // .geoNaturalEarth1()
   // .clipAngle(90) // Only display front side of the world
-  .rotate(invertLongLat(currentLongLat))
+  // .rotate(invertLongLat(currentLongLat))
   .fitExtent(
     // Auto zoom
     [
-      [margin, margin],
-      [screenWidth - margin, screenHeight - margin]
+      [margin + 200, margin],
+      [screenWidth - margin + 200, screenHeight - margin - 100]
     ],
-    land
+    ausStraight.features[0]
   );
 
 // Context needed to draw on canvas
@@ -73,7 +75,7 @@ const path = d3
   .geoPath()
   .projection(projection)
   .context(context)
-  .pointRadius(0.5);
+  .pointRadius(0.2);
 
 // Set the main point
 const initialPoint = getItem("australia").longlat;
@@ -94,7 +96,7 @@ function kmsToRadius(kms) {
   return kms / 111.319444; // This many kilometres per degree
 }
 
-Papa.parse("http://localhost:1234/fire_archive_V1_95963.csv", {
+Papa.parse("http://localhost:1234/fire_nrt_V1_95963.csv", {
   download: true,
   header: true,
   step: function(row) {
@@ -122,33 +124,36 @@ Papa.parse("http://localhost:1234/fire_archive_V1_95963.csv", {
 
     function repeatOften() {
       // setTimeout(() => {
-        // console.log("Frame");
+      // console.log("Frame");
 
-        if (index > highlightFrames - 1) {
-          for (const fire of fireGroups[index - highlightFrames]) {
-            drawPoint([fire.longitude, fire.latitude], "#111111");
-          }
+      if (index > highlightFrames - 1) {
+        for (const fire of fireGroups[index - highlightFrames]) {
+          drawPoint([fire.longitude, fire.latitude], "#111111");
         }
+      }
 
-        // if (index > 1) {
-        //   for (const fire of fireGroups[index - 1]) {
-        //     drawPoint([fire.longitude, fire.latitude], "#ed7b1e");
-        //   }
-        // }
+      // if (index > 1) {
+      //   for (const fire of fireGroups[index - 1]) {
+      //     drawPoint([fire.longitude, fire.latitude], "#ed7b1e");
+      //   }
+      // }
 
+      if (index < fireGroups.length) {
         for (const fire of fireGroups[index]) {
-          // if (Math.random() < 0.001) console.log(fire.acq_date);
+          
           if (!dateLastShown || fire.acq_date !== dateLastShown) {
             console.log(fire.acq_date);
             dateLastShown = fire.acq_date;
           }
           drawPoint([fire.longitude, fire.latitude], "#FF4D00");
         }
+      }
 
-        // drawPoint([fires[index].longitude, fires[index].latitude]);
+      // drawPoint([fires[index].longitude, fires[index].latitude]);
 
-        index++;
-        if (index < fireGroups.length) requestAnimationFrame(repeatOften);
+      index++;
+      if (index < fireGroups.length + highlightFrames)
+        requestAnimationFrame(repeatOften);
       // }, 1000 / fps);
     }
     requestAnimationFrame(repeatOften);
@@ -156,7 +161,7 @@ Papa.parse("http://localhost:1234/fire_archive_V1_95963.csv", {
 });
 
 // Draw the inital state of the world
-drawWorld();
+// drawWorld();
 
 function drawWorld() {
   // Clear the canvas ready for redraw
@@ -176,7 +181,7 @@ function drawWorld() {
   context.strokeStyle = "darkgrey";
   context.fillStyle = "white";
   context.lineWidth = 1.1;
-  path(land);
+  path(ausStraight);
   context.fill();
   context.stroke();
 
@@ -260,8 +265,8 @@ let storyPositionMax = storyData.length;
 const initialGlobeScale = projection.scale();
 
 // Set initial position
-currentStoryPosition = 1;
-doZoom();
+// currentStoryPosition = 1;
+// doZoom();
 
 body.on("keydown", e => {
   // Advance the story on keydown event
