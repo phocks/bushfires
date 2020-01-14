@@ -24,7 +24,7 @@ import storyData from "./story-data.js";
 
 import ausStatesMap from "./aus-states.topo.json";
 import ausMap from "./aus-larger.geo.json";
-import ausStraight from "./aust-straight.geo.json"
+import ausStraight from "./aust-straight.geo.json";
 
 // import fires from "./fires.json";
 
@@ -140,7 +140,6 @@ Papa.parse("http://localhost:1234/fire_nrt_V1_95963.csv", {
 
       if (index < fireGroups.length) {
         for (const fire of fireGroups[index]) {
-          
           if (!dateLastShown || fire.acq_date !== dateLastShown) {
             console.log(fire.acq_date);
             dateLastShown = fire.acq_date;
@@ -152,8 +151,15 @@ Papa.parse("http://localhost:1234/fire_nrt_V1_95963.csv", {
       // drawPoint([fires[index].longitude, fires[index].latitude]);
 
       index++;
-      if (index < fireGroups.length + highlightFrames)
+      if (index < fireGroups.length + highlightFrames) {
+        // var image = canvasEl
+        //   .toDataURL("image/png")
+        //   .replace("image/png", "image/octet-stream"); // here is the most important part because if you dont replace you will get a DOM 18 exception.
+
+        // window.location.href = image; // it will save locally
         requestAnimationFrame(repeatOften);
+      }
+
       // }, 1000 / fps);
     }
     requestAnimationFrame(repeatOften);
@@ -161,7 +167,7 @@ Papa.parse("http://localhost:1234/fire_nrt_V1_95963.csv", {
 });
 
 // Draw the inital state of the world
-// drawWorld();
+drawWorld();
 
 function drawWorld() {
   // Clear the canvas ready for redraw
