@@ -1,10 +1,19 @@
 // D3 module imports
+import "regenerator-runtime/runtime";
+
 import * as d3Selection from "d3-selection";
 import * as d3Geo from "d3-geo";
 import * as d3Interpolate from "d3-interpolate";
 import * as d3Transition from "d3-transition";
+import * as d3Tile from "d3-tile";
 // Then combine them all into a single d3 var
-const d3 = { ...d3Selection, ...d3Geo, ...d3Transition, ...d3Interpolate };
+const d3 = {
+  ...d3Selection,
+  ...d3Geo,
+  ...d3Transition,
+  ...d3Interpolate,
+  ...d3Tile
+};
 
 import * as topojson from "topojson-client";
 import canvasDpiScaler from "canvas-dpi-scaler";
@@ -19,12 +28,18 @@ let previousRangeInKms = 0;
 
 let currentLongLat = [133.15399233370441, -24.656909465155994];
 
+const tileSize = 256;
+
 import worldMap from "./world-map.js";
 import storyData from "./story-data.js";
 
 import ausStatesMap from "./aus-states.topo.json";
 import ausMap from "./aus-larger.geo.json";
 import ausStraight from "./aust-straight.geo.json";
+
+// Start to work with tiles
+const url = (x, y, z) =>
+  `https://maps.wikimedia.org/osm-intl/${z}/${x}/${y}.png`;
 
 // import fires from "./fires.json";
 
@@ -56,11 +71,17 @@ const projection = d3
   .fitExtent(
     // Auto zoom
     [
-      [margin + 200, margin],
-      [screenWidth - margin + 200, screenHeight - margin - 100]
+      [margin, margin],
+      [screenWidth - margin, screenHeight - margin]
     ],
-    ausStraight.features[0]
+    land
   );
+
+const tile = d3
+  .tile()
+  .size([screenWidth, screenHeight])
+  .scale(projection.scale() * 2 * Math.PI)
+  .translate(projection([0, 0]));
 
 // Context needed to draw on canvas
 const context = canvas.node().getContext("2d");
@@ -76,6 +97,44 @@ const path = d3
   .projection(projection)
   .context(context)
   .pointRadius(0.2);
+
+const raster = async () => {
+  const tiles = tile();
+  const [x0, y0] = tiles[0];
+  const [x1, y1] = tiles[tiles.length - 1];
+  const offscreenContext = canvas
+    .node()
+    .getContext("2d", (x1 - x0 + 1) * tileSize, (y1 - y0 + 1) * tileSize);
+  for (const [x, y, image] of await Promise.all(
+    tiles.map(([x, y, z]) =>
+      new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onerror = reject;
+        image.onload = () => resolve(image);
+        console.log(url(x, y, z));
+        image.src = url(x, y, z);
+      }).then(image => [x, y, image])
+    )
+  )) {
+    offscreenContext.drawImage(
+      image,
+      (x - x0) * tileSize,
+      (y - y0) * tileSize,
+      tileSize,
+      tileSize
+    );
+  }
+  // const context = DOM.context2d(width, height);
+  context.drawImage(
+    offscreenContext.canvas,
+    Math.round((x0 + tiles.translate[0]) * tiles.scale),
+    Math.round((y0 + tiles.translate[1]) * tiles.scale),
+    (x1 - x0 + 1) * tiles.scale,
+    (y1 - y0 + 1) * tiles.scale
+  );
+};
+
+raster();
 
 // Set the main point
 const initialPoint = getItem("australia").longlat;
