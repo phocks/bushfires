@@ -6,13 +6,15 @@ import * as d3Geo from "d3-geo";
 import * as d3Interpolate from "d3-interpolate";
 import * as d3Transition from "d3-transition";
 import * as d3Tile from "d3-tile";
+import * as d3Zoom from "d3-zoom";
 // Then combine them all into a single d3 var
 const d3 = {
   ...d3Selection,
   ...d3Geo,
   ...d3Transition,
   ...d3Interpolate,
-  ...d3Tile
+  ...d3Tile,
+  ...d3Zoom
 };
 
 import * as topojson from "topojson-client";
@@ -38,8 +40,13 @@ import ausMap from "./aus-larger.geo.json";
 import ausStraight from "./aust-straight.geo.json";
 
 // Start to work with tiles
+// const url = (x, y, z) =>
+//   `https://maps.wikimedia.org/osm-intl/${z}/${x}/${y}.png`;
+
 const url = (x, y, z) =>
-  `https://maps.wikimedia.org/osm-intl/${z}/${x}/${y}.png`;
+  `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/${z}/${x}/${y}${
+    devicePixelRatio > 1 ? "@2x" : ""
+  }?access_token=pk.eyJ1IjoidG1jdyIsImEiOiJjamN0Z3ZiOXEwanZkMnh2dGFuemkzemE3In0.gibebYiJ5TEdXvwjpCY0jg`;
 
 // import fires from "./fires.json";
 
@@ -47,12 +54,14 @@ const world = topojson.feature(worldMap, worldMap.objects.land);
 const land = topojson.feature(ausStatesMap, ausStatesMap.objects.states);
 const globe = { type: "Sphere" };
 
-console.log(ausStraight);
-
 const body = d3
   .select("body")
   .style("background-color", "#f9f9f9")
   .style("margin", 0);
+
+const svg = d3.select(".world")
+  .append("svg")
+  .attr("viewBox", [0, 0, screenWidth, screenHeight]);
 
 const canvas = d3
   .select(".world")
@@ -77,11 +86,27 @@ const projection = d3
     land
   );
 
+// const tile = d3
+//   .tile()
+//   .size([screenWidth, screenHeight])
+//   .scale(projection.scale() * 2 * Math.PI)
+//   .translate(projection([0, 0]))
+//   .tileSize(tileSize);
+
 const tile = d3
   .tile()
-  .size([screenWidth, screenHeight])
+  .extent([
+    [0, 0],
+    [screenWidth, screenHeight]
+  ])
   .scale(projection.scale() * 2 * Math.PI)
-  .translate(projection([0, 0]));
+  .translate(projection([0,0]))
+  .tileSize(tileSize);
+
+let image = svg
+  .append("g")
+  .attr("pointer-events", "none")
+  .selectAll("image");
 
 // Context needed to draw on canvas
 const context = canvas.node().getContext("2d");
@@ -97,6 +122,35 @@ const path = d3
   .projection(projection)
   .context(context)
   .pointRadius(0.2);
+
+const zoom = d3
+  .zoom()
+  .scaleExtent([1 << 8, 1 << 22])
+  .extent([
+    [0, 0],
+    [screenWidth, screenHeight]
+  ])
+  .on("zoom", () => zoomed(d3Selection.event.transform));
+
+svg
+  .call(zoom)
+  .call(
+    zoom.transform,
+    d3.zoomIdentity.translate(screenWidth >> 1, screenHeight >> 1).scale(1 << 12)
+  );
+
+function zoomed(transform) {
+  const tiles = tile(transform);
+
+  image = image
+    .data(tiles, d => d)
+    .join("image")
+    .attr("xlink:href", d => url(...d3.tileWrap(d)))
+    .attr("x", ([x]) => (x + tiles.translate[0]) * tiles.scale)
+    .attr("y", ([, y]) => (y + tiles.translate[1]) * tiles.scale)
+    .attr("width", tiles.scale)
+    .attr("height", tiles.scale);
+}
 
 const raster = async () => {
   const tiles = tile();
@@ -134,7 +188,7 @@ const raster = async () => {
   );
 };
 
-raster();
+// raster();
 
 // Set the main point
 const initialPoint = getItem("australia").longlat;
@@ -226,7 +280,7 @@ Papa.parse("http://localhost:1234/fire_nrt_V1_95963.csv", {
 });
 
 // Draw the inital state of the world
-drawWorld();
+// drawWorld();
 
 function drawWorld() {
   // Clear the canvas ready for redraw
@@ -347,7 +401,8 @@ body.on("keydown", e => {
     if (currentStoryPosition >= storyPositionMax) currentStoryPosition = 0;
   }
 
-  doZoom();
+  console.log("Keydown event fired")
+  // doZoom();
 });
 
 function doZoom() {
