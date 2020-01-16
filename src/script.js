@@ -1,5 +1,5 @@
 // D3 module imports
-import "regenerator-runtime/runtime";
+import "regenerator-runtime/runtime"; // async/await
 
 import * as d3Selection from "d3-selection";
 import * as d3Geo from "d3-geo";
@@ -28,7 +28,7 @@ const screenHeight = window.innerHeight;
 let currentRangeInKms = 163.518;
 let previousRangeInKms = 0;
 
-let currentLongLat = [133.15399233370441, -24.656909465155994];
+// let currentLongLat = [133.15399233370441, -24.656909465155994];
 
 const tileSize = 256;
 
@@ -41,9 +41,38 @@ import ausStraight from "./aust-straight.geo.json";
 
 console.log(ausStraight);
 
+let url;
+
 // Start to work with tiles
-const url = (x, y, z) =>
-  `https://maps.wikimedia.org/osm-intl/${z}/${x}/${y}.png`;
+url = (x, y, z) => `https://maps.wikimedia.org/osm-intl/${z}/${x}/${y}.png`;
+
+url = (x, y, z) =>
+  `https://stamen-tiles-${
+    "abc"[Math.abs(x + y) % 3]
+  }.a.ssl.fastly.net/toner-lite/${z}/${x}/${y}${
+    devicePixelRatio > 1 ? "@2x" : ""
+  }.png`;
+
+url = (x, y, z) =>
+  `https://stamen-tiles-${
+    "abc"[Math.abs(x + y) % 3]
+  }.a.ssl.fastly.net/toner-hybrid/${z}/${x}/${y}${
+    devicePixelRatio > 1 ? "@2x" : ""
+  }.png`;
+
+url = (x, y, z) =>
+  `https://stamen-tiles-${
+    "abc"[Math.abs(x + y) % 3]
+  }.a.ssl.fastly.net/terrain/${z}/${x}/${y}${
+    devicePixelRatio > 1 ? "@2x" : ""
+  }.png`;
+
+url = (x, y, z) =>
+  `https://${
+    "abc"[Math.abs(x + y) % 3]
+  }.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}${
+    devicePixelRatio > 1 ? "@2x" : ""
+  }.png`;
 
 // const url = (x, y, z) =>
 //   `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/${z}/${x}/${y}${
@@ -157,57 +186,57 @@ function zoomed(transform) {
     .attr("height", tiles.scale);
 }
 
-const raster = async () => {
-  const tiles = tile();
-  const [x0, y0] = tiles[0];
-  const [x1, y1] = tiles[tiles.length - 1];
-  const offscreenContext = canvas
-    .node()
-    .getContext("2d", (x1 - x0 + 1) * tileSize, (y1 - y0 + 1) * tileSize);
-  for (const [x, y, image] of await Promise.all(
-    tiles.map(([x, y, z]) =>
-      new Promise((resolve, reject) => {
-        const image = new Image();
-        image.onerror = reject;
-        image.onload = () => resolve(image);
-        console.log(url(x, y, z));
-        image.src = url(x, y, z);
-      }).then(image => [x, y, image])
-    )
-  )) {
-    offscreenContext.drawImage(
-      image,
-      (x - x0) * tileSize,
-      (y - y0) * tileSize,
-      tileSize,
-      tileSize
-    );
-  }
-  // const context = DOM.context2d(width, height);
-  context.drawImage(
-    offscreenContext.canvas,
-    Math.round((x0 + tiles.translate[0]) * tiles.scale),
-    Math.round((y0 + tiles.translate[1]) * tiles.scale),
-    (x1 - x0 + 1) * tiles.scale,
-    (y1 - y0 + 1) * tiles.scale
-  );
-};
+// const raster = async () => {
+//   const tiles = tile();
+//   const [x0, y0] = tiles[0];
+//   const [x1, y1] = tiles[tiles.length - 1];
+//   const offscreenContext = canvas
+//     .node()
+//     .getContext("2d", (x1 - x0 + 1) * tileSize, (y1 - y0 + 1) * tileSize);
+//   for (const [x, y, image] of await Promise.all(
+//     tiles.map(([x, y, z]) =>
+//       new Promise((resolve, reject) => {
+//         const image = new Image();
+//         image.onerror = reject;
+//         image.onload = () => resolve(image);
+//         console.log(url(x, y, z));
+//         image.src = url(x, y, z);
+//       }).then(image => [x, y, image])
+//     )
+//   )) {
+//     offscreenContext.drawImage(
+//       image,
+//       (x - x0) * tileSize,
+//       (y - y0) * tileSize,
+//       tileSize,
+//       tileSize
+//     );
+//   }
+//   // const context = DOM.context2d(width, height);
+//   context.drawImage(
+//     offscreenContext.canvas,
+//     Math.round((x0 + tiles.translate[0]) * tiles.scale),
+//     Math.round((y0 + tiles.translate[1]) * tiles.scale),
+//     (x1 - x0 + 1) * tiles.scale,
+//     (y1 - y0 + 1) * tiles.scale
+//   );
+// };
 
 // raster();
 
 // Set the main point
-const initialPoint = getItem("australia").longlat;
+// const initialPoint = getItem("australia").longlat;
 // projection.rotate([-initialPoint[0], -initialPoint[1]]);
 
 // A helper function to index an array of objects
-function getItem(id) {
-  return storyData.find(item => item.id === id);
-}
+// function getItem(id) {
+//   return storyData.find(item => item.id === id);
+// }
 
-const rangeCircle = d3
-  .geoCircle()
-  .center(currentLongLat)
-  .radius(kmsToRadius(currentRangeInKms));
+// const rangeCircle = d3
+//   .geoCircle()
+//   .center(currentLongLat)
+//   .radius(kmsToRadius(currentRangeInKms));
 
 // Helper to turn kilometres into a D3 radius
 function kmsToRadius(kms) {
