@@ -39,14 +39,16 @@ import ausStatesMap from "./aus-states.topo.json";
 import ausMap from "./aus-larger.geo.json";
 import ausStraight from "./aust-straight.geo.json";
 
-// Start to work with tiles
-// const url = (x, y, z) =>
-//   `https://maps.wikimedia.org/osm-intl/${z}/${x}/${y}.png`;
+console.log(ausStraight);
 
+// Start to work with tiles
 const url = (x, y, z) =>
-  `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/${z}/${x}/${y}${
-    devicePixelRatio > 1 ? "@2x" : ""
-  }?access_token=pk.eyJ1IjoidG1jdyIsImEiOiJjamN0Z3ZiOXEwanZkMnh2dGFuemkzemE3In0.gibebYiJ5TEdXvwjpCY0jg`;
+  `https://maps.wikimedia.org/osm-intl/${z}/${x}/${y}.png`;
+
+// const url = (x, y, z) =>
+//   `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/${z}/${x}/${y}${
+//     devicePixelRatio > 1 ? "@2x" : ""
+//   }?access_token=pk.eyJ1IjoidG1jdyIsImEiOiJjamN0Z3ZiOXEwanZkMnh2dGFuemkzemE3In0.gibebYiJ5TEdXvwjpCY0jg`;
 
 // import fires from "./fires.json";
 
@@ -59,7 +61,8 @@ const body = d3
   .style("background-color", "#f9f9f9")
   .style("margin", 0);
 
-const svg = d3.select(".world")
+const svg = d3
+  .select(".world")
   .append("svg")
   .attr("viewBox", [0, 0, screenWidth, screenHeight]);
 
@@ -83,7 +86,7 @@ const projection = d3
       [margin, margin],
       [screenWidth - margin, screenHeight - margin]
     ],
-    land
+    ausStraight.features[0] // Map will zoom to this geo feature
   );
 
 // const tile = d3
@@ -100,7 +103,7 @@ const tile = d3
     [screenWidth, screenHeight]
   ])
   .scale(projection.scale() * 2 * Math.PI)
-  .translate(projection([0,0]))
+  .translate(projection([0, 0]))
   .tileSize(tileSize);
 
 let image = svg
@@ -136,7 +139,9 @@ svg
   .call(zoom)
   .call(
     zoom.transform,
-    d3.zoomIdentity.translate(screenWidth >> 1, screenHeight >> 1).scale(1 << 12)
+    d3.zoomIdentity
+      .translate(screenWidth >> 1, screenHeight >> 1)
+      .scale(1 << 12)
   );
 
 function zoomed(transform) {
@@ -400,8 +405,6 @@ body.on("keydown", e => {
     currentStoryPosition++;
     if (currentStoryPosition >= storyPositionMax) currentStoryPosition = 0;
   }
-
-  console.log("Keydown event fired")
   // doZoom();
 });
 
