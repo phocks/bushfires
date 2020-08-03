@@ -1,0 +1,1 @@
+{"version":3,"sources":["styles.css"],"names":[],"mappings":"AAOA,WACE,iBAAkB,CAClB,KAAM,CACN,MACF","file":"styles.0dcf8260.css","sourceRoot":"../src","sourcesContent":["svg {\n  position: absolute;\n  top: 0;\n  left: 0;\n  /* z-index: -1; */\n}\n\ncanvas {\n  position: absolute;\n  top: 0;\n  left: 0;\n}"]}
